@@ -1,0 +1,4 @@
+*.dylib
+*.so
+*.h
+.effort-router.tmp*
