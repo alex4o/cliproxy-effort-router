@@ -43,17 +43,6 @@ import (
 
 // ponytail: ABI glue copied from dense-system; the logic lives in router.go.
 
-type envelope struct {
-	OK     bool            `json:"ok"`
-	Result json.RawMessage `json:"result,omitempty"`
-	Error  *envelopeError  `json:"error,omitempty"`
-}
-
-type envelopeError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
 type registration struct {
 	SchemaVersion uint32             `json:"schema_version"`
 	Metadata      pluginapi.Metadata `json:"metadata"`
@@ -104,9 +93,7 @@ func cliproxyPluginCall(method *C.char, request *C.uint8_t, requestLen C.size_t,
 
 //export cliproxyPluginFree
 func cliproxyPluginFree(ptr unsafe.Pointer, _ C.size_t) {
-	if ptr != nil {
-		C.free(ptr)
-	}
+	C.free(ptr) // free(NULL) is a no-op
 }
 
 //export cliproxyPluginShutdown
@@ -164,22 +151,18 @@ func okEnvelope(v any) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(envelope{OK: true, Result: raw})
+	return json.Marshal(pluginabi.Envelope{OK: true, Result: raw})
 }
 
 func errorEnvelope(code, message string) []byte {
-	raw, _ := json.Marshal(envelope{OK: false, Error: &envelopeError{Code: code, Message: message}})
+	raw, _ := json.Marshal(pluginabi.Envelope{OK: false, Error: &pluginabi.Error{Code: code, Message: message}})
 	return raw
 }
 
 func writeResponse(response *C.cliproxy_buffer, raw []byte) {
-	if response == nil || len(raw) == 0 {
+	if response == nil {
 		return
 	}
-	ptr := C.CBytes(raw)
-	if ptr == nil {
-		return
-	}
-	response.ptr = ptr
+	response.ptr = C.CBytes(raw) // aborts on OOM rather than returning NULL
 	response.len = C.size_t(len(raw))
 }
