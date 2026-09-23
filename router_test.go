@@ -99,6 +99,10 @@ func TestRouteSkipsOverridesFailuresAndOtherModels(t *testing.T) {
 	if out := route("claude-fable-5-1", []byte(body)); string(out) != body {
 		t.Fatalf("failed turn must stay uninjected later too: %s", out)
 	}
+	choice["go all out"] = "max"
+	if out := route("claude-fable-5-1", []byte(`{"messages":[{"role":"user","content":"go all out"}]}`)); gjson.GetBytes(out, "messages.#").Int() != 1 {
+		t.Fatalf("the classifier may only pick low..xhigh: %s", out)
+	}
 	choice["new turn"] = "low"
 	override := `{"messages":[{"role":"user","content":"new turn"},{"role":"system","content":[{"type":"text","text":"hook"}],"output_config":{"effort":"xhigh"}}]}`
 	if out := route("claude-fable-5-1", []byte(override)); string(out) != override {
