@@ -62,6 +62,9 @@ type registration struct {
 	} `json:"capabilities"`
 }
 
+// pluginVersion is set at release build time with -X main.pluginVersion.
+var pluginVersion = "0.0.0-dev"
+
 func main() {}
 
 //export cliproxy_plugin_init
@@ -119,9 +122,18 @@ func handleMethod(method string, request []byte) ([]byte, error) {
 		configure(lifecycle.ConfigYAML)
 		reg := registration{SchemaVersion: pluginabi.SchemaVersion, Metadata: pluginapi.Metadata{
 			Name:             "effort-router",
-			Version:          "0.1.0",
+			Version:          pluginVersion,
 			Author:           "alex4o",
-			GitHubRepository: "https://github.com/alex4o",
+			GitHubRepository: "https://github.com/alex4o/cliproxy-effort-router",
+			ConfigFields: []pluginapi.ConfigField{
+				{Name: "jev-url", Type: pluginapi.ConfigFieldTypeString, Description: "Jev-compatible classifier endpoint (POST /v1/systemone): SemIf, Laya or api.typesafe.ai."},
+				{Name: "jev-model", Type: pluginapi.ConfigFieldTypeString, Description: "Classifier model name, default jev-latest."},
+				{Name: "jev-api-key", Type: pluginapi.ConfigFieldTypeString, Description: "Bearer key for the classifier; empty for local servers."},
+				{Name: "timeout-ms", Type: pluginapi.ConfigFieldTypeInteger, Description: "Classifier timeout; on timeout the turn is left untouched. Default 1500."},
+				{Name: "models", Type: pluginapi.ConfigFieldTypeArray, Description: "Model-name prefixes to route. Supported: Claude with per-turn effort (claude-fable-5-1, claude-opus-5-5) and gpt-6."},
+				{Name: "baseline-effort", Type: pluginapi.ConfigFieldTypeEnum, EnumValues: []string{"low", "medium", "high", "xhigh", "max"}, Description: "Client default effort; any other request effort counts as a manual /effort and wins. Default medium (Claude Code)."},
+				{Name: "state-file", Type: pluginapi.ConfigFieldTypeString, Description: "Append-only decision log; keeps past turns stable across restarts. Default ~/.cli-proxy-api/effort-router.jsonl."},
+			},
 		}}
 		reg.Capabilities.RequestNormalizer = true
 		return okEnvelope(reg)

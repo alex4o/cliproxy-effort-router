@@ -16,7 +16,11 @@ If you set `/effort` yourself to a non-baseline value, your setting wins. If the
 
 Any server that implements TypeSafe's Jev contract works: `POST /v1/systemone` with model `jev-latest` and a `choice` question, returning `answers.effort.choice`. SemIf, Laya and Jev all qualify.
 
-## Build
+## Install
+
+From the CLIProxyAPI Management Center's plugin store, or download the zip for your platform from [Releases](https://github.com/alex4o/cliproxy-effort-router/releases) and put the library in `~/.cli-proxy-api/plugins/`. All settings below show up in the Management Center's plugin config.
+
+## Build from source
 
 ```sh
 go build -buildmode=c-shared -o effort-router.dylib . && mv effort-router.dylib ~/.cli-proxy-api/plugins/
